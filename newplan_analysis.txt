@@ -1,0 +1,367 @@
+================================================================================
+  ECOMESS AI — NEWPLAN.TXT ANALYSIS, IMPLEMENTATION PLAN & BUSINESS PROPOSAL
+  Generated: 2026-09-30
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. POINT-BY-POINT DERIVATION FROM NEWPLAN.TXT ABSTRACT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CONSOLIDATE HOSTELS & KITCHENS UNDER ONE SECTION
+   - Merge "Hostel Mess" and "Kitchen/FPU" into one unified Establishment
+     architecture. Admins/users personalize their establishment type on login.
+
+2. CATEGORY 1 — INSTITUTIONAL KITCHENS (renamed from "Hostel")
+   - Encompasses: student hostels, schools, colleges, Midday Meal Scheme
+     (MMS/MDMS) kitchens, working/staff hostels, hospitals, and mass-feeding
+     institutions.
+   - Keeps existing role model: Student/Member, Staff, Admin.
+
+3. CATEGORY 2 — PRIVATE/COMMERCIAL KITCHENS (renamed from "Kitchen/FPU")
+   - Encompasses: canteens, working women's hostels, restaurants, catering
+     services, cafeterias, cloud/community kitchens.
+   - Uses same Staff + Admin roles, but replaces "student" with a "customer"
+     who can PLACE ORDERS that are collected and saved.
+
+4. DUAL SURPLUS DISPOSITION (FREE OR PAID)
+   - Admins of both categories can either DONATE surplus FREE to NGOs/shelters
+     or SELL at a DISCOUNTED RATE to buyers or organizations.
+
+5. SURPLUS FOOD REGISTRATION
+   - Standardized listing captures: food type, quantity, preparation time,
+     location, safe consumption time window, and pickup availability.
+
+6. AUTOMATED MULTI-FACTOR SMART MATCHING ENGINE
+   - Evaluates: quantity required vs available, geodesic distance, urgency/
+     remaining safe shelf life, food type suitability, and recipient vehicle
+     capacity. Matches NGOs to the best available surplus source(s).
+
+7. MULTIPLE-SOURCE SURPLUS ALLOCATION (POOLING)
+   - When one kitchen cannot satisfy a large NGO quota, the system AGGREGATES
+     surplus across multiple nearby kitchens (A+B+C) into one dispatch plan.
+   - Example: NGO needs 500 meals → Kitchen A=200, B=180, C=120 → pooled.
+
+8. OPTIMIZED MULTI-STOP ROUTE RECOMMENDATION
+   - Automated multi-stop tour planning for NGO/agent pickup vehicles,
+     optimizing sequence across multiple kitchen sources to drop-off shelter.
+
+9. CLOSED-LOOP CIRCULAR ECONOMY (BIOGAS & COMPOSTING)
+   - Substandard or expired food that cannot be safely consumed is routed to:
+     biogas digesters, organic farm composting, or animal feed. Zero landfill.
+
+10. DISASTER & EMERGENCY RELIEF SUPPORT (Phase 2)
+    - Emergency flag for sudden relief operations (floods, natural disasters).
+    - System pools surplus across all nearby kitchens and recommends route.
+    - [DEFERRED to Phase 2 — not in current implementation scope]
+
+11. CLOSED-LOOP AI DEMAND FORECASTING
+    - Historical consumption, waste logs, feedback, and poll counts feed back
+      into pre-cooking predictive algorithms to prevent future overproduction.
+
+12. REWARDS & MONTHLY IMPACT REPORTS
+    - Monthly reports on food prepared, consumed, surplus redistributed, and
+      waste avoided. Paired with an Eco-Points ledger and recognition system.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. CURRENT APPLICATION vs. NEW PLAN — GAP ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHAT EXISTS NOW:
+  • Roles: student, staff, admin, kitchen_fpu, ngo, buyer
+  • Separate silos: Hostel-side (student/staff/admin) and Kitchen-side (kitchen_fpu)
+  • No concept of "Establishment type" distinguishing institutional vs private
+  • Kitchen/FPU dashboard only has surplus posting and waste diversion
+  • No customer ordering system for canteen/restaurant scenarios
+  • Single-source matching only (no multi-kitchen pooling)
+  • Login page shows 5 separate role tabs with no establishment context
+  • database.py has 23 tables, no establishment or customer_order table
+
+KEY GAPS:
+  1. No establishment type field → can't distinguish hostel from canteen
+  2. No customer ordering → private kitchen diners can't place/collect orders
+  3. No multi-source pooling → NGOs can only get surplus from one kitchen
+  4. Admin dashboard is hostel-only → no private kitchen management view
+  5. Login doesn't show Institution vs Private Kitchen context
+  6. No monthly ESG/impact report generation
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. IMPLEMENTATION PLAN (CONFIRMED SCOPE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PHASE 1 — DATABASE SCHEMA CHANGES (database.py)
+  ─────────────────────────────────────────────
+  [A] Add 'institution_type' column to users table
+      - Values: 'hostel', 'school', 'college', 'midday_meal', 'hospital',
+                'canteen', 'restaurant', 'catering', 'cloud_kitchen', 'general'
+      - Determines whether admin/staff/student belong to Institutional or
+        Private Kitchen context (category derived from type).
+
+  [B] Add 'customer_orders' table (for Private Kitchen ordering)
+      - Fields: id, kitchen_admin_id (seller), customer_name, phone,
+                items_json, total_amount, order_status, pickup_token, ordered_at
+      - Self-contained: no FK to users (walk-in customers can be anonymous)
+      - Status: 'placed' → 'preparing' → 'ready' → 'completed' / 'cancelled'
+
+  [C] Add multi-source allocation functions to logistics_engine.py
+      - allocate_multi_source(demand_qty, ngo_location, max_km) →
+        greedy surplus pooling across compatible active listings
+
+  [D] Add get_monthly_kitchen_report() to database.py
+      - Aggregates: food prepared, waste, surplus redistributed, biogas/farm
+        diversions, CO2 avoided, cost saved, eco-points earned.
+
+PHASE 2 — LOGIN PAGE & NAVIGATION (login_page.py, main.py)
+  ──────────────────────────────────────────────────────────
+  [E] Add "Establishment Type" selector in login/signup for admin role
+      - Shows on admin login: dropdowns for category + sub-type
+      - Stored in users.institution_type during account creation
+
+  [F] Home page updates text to reflect "Institution & Private Kitchen" naming
+
+PHASE 3 — ADMIN DASHBOARD (admin_dash.py)
+  ─────────────────────────────────────────
+  [G] Detect institution_type at load time
+  [H] If Institutional (hostel/school/etc): show existing tabs
+      - Menu, Users, Salary, Mess Bills, Inventory, Food Waste, Poll Data,
+        Feedback, Demand Prediction, Food Prepared, Complaints, Notifications
+  [I] If Private Kitchen (canteen/restaurant/etc): adapt tabs
+      - Replace "Mess Bills" → "Customer Orders"
+      - Replace "Poll Data" → "Daily Order Summary"
+      - Keep: Menu/Today's Specials, Users, Salary, Inventory, Food Waste,
+              Demand Prediction, Food Prepared, Complaints, Notifications
+  [J] ADD to both types: "Post Surplus" tab (Free / Discounted toggle)
+      - This brings kitchen_fpu surplus posting INTO admin_dash
+  [K] ADD to both types: "Monthly ESG Report" tab
+
+PHASE 4 — STAFF DASHBOARD (staff_dash.py)
+  ─────────────────────────────────────────
+  [L] For Private Kitchen staff: show "Customer Orders Queue" instead of
+      "Poll Data"
+  [M] Staff can update order status (placed → preparing → ready → completed)
+
+PHASE 5 — NGO DASHBOARD (ngo_dash.py, logistics_engine.py)
+  ──────────────────────────────────────────────────────────
+  [N] Add "Multi-Source Request" tab in ngo_dash.py
+      - Enter required quantity + dietary preference + max distance
+      - Run allocate_multi_source() from logistics_engine.py
+      - Show which kitchens contribute how much
+      - Automatically build multi-stop route and display
+  [O] Update Surplus Marketplace to show listings from BOTH institution types
+
+PHASE 6 — KITCHEN/FPU DASHBOARD (kitchen_dash.py) → MERGE/SIMPLIFY
+  ──────────────────────────────────────────────────────────────────
+  [P] Keep kitchen_dash.py for standalone kitchen_fpu role users
+  [Q] Ensure surplus listing in kitchen_dash still works (not broken)
+
+DEFERRED (Phase 2 future work):
+  - Emergency/Disaster Relief Request tab in ngo_dash
+  - Full customer self-service portal (mobile-style ordering UI)
+  - Real-time push notifications
+  - PDF export for monthly reports
+  - Multi-language (Hindi/regional language) interface
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. NECESSARY CODE CHANGES — FILE BY FILE SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: database.py
+  - Add ALTER TABLE to add 'institution_type' VARCHAR(50) to users
+  - Add CREATE TABLE customer_orders (standalone, no FK to users for customers)
+  - Add functions: place_customer_order(), get_customer_orders(),
+    update_customer_order_status(), get_monthly_kitchen_report()
+  - Update user manuals text for admin/kitchen_fpu to reflect dual category
+
+FILE: login_page.py
+  - Add institution_type selector for admin sign-up/registration
+  - Update role tabs labels to reflect new naming
+  - "Student" → "Institution Member / Student"
+  - "Kitchen" → "Private Kitchen Admin"
+
+FILE: main.py
+  - Update _open_dashboard() to pass institution_type context to dashboards
+  - Routing stays the same (roles unchanged), but passes extra context
+
+FILE: admin_dash.py
+  - Load institution_type from current_user at __init__
+  - If institutional: keep current tabs, add "Post Surplus" + "Monthly Report"
+  - If private_kitchen: swap Mess Bills→Customer Orders, Poll→Order Summary,
+    add "Post Surplus" + "Monthly Report"
+
+FILE: staff_dash.py
+  - Load institution_type from current_user at __init__
+  - If private_kitchen: show "Customer Orders Queue" tab (update status flow)
+  - If institutional: keep existing tabs
+
+FILE: ngo_dash.py
+  - Add "Multi-Source Allocation" tab
+  - Interface: enter quota (meals/kg), dietary pref, max distance
+  - Calls logistics_engine.allocate_multi_source()
+  - Shows allocation breakdown + auto-builds multi-stop route
+
+FILE: logistics_engine.py
+  - Add allocate_multi_source_surplus(demand_qty, ngo_lat, ngo_lon,
+    max_distance_km, food_pref, db_listings) → returns list of allocations
+    and pooled route
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. REVIEW DOUBTS — KEY DESIGN DECISIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q1. ROLE MIGRATION: Keeping roles (student, staff, admin, kitchen_fpu, ngo)
+    unchanged and adding institution_type field avoids all DB migration risk.
+    DECISION (Confirmed): ✅ Add institution_type field, preserve roles.
+
+Q2. PRIVATE KITCHEN ORDERING: Simple pre-order form with pickup token.
+    DECISION (Confirmed): ✅ Simple order form (items + quantity + total price
+    + token), staff/admin updates status from their dashboard.
+
+Q3. MULTI-SOURCE POOLING: Implement now. Emergency mode deferred.
+    DECISION (Confirmed): ✅ Multi-source allocation in NGO tab, no disaster
+    mode for this phase.
+
+Q4. ADMIN DASHBOARD UNIFICATION: Single adaptive admin_dash.py.
+    DECISION: ✅ Detect institution_type at load; conditionally show/hide tabs.
+
+Q5. WHERE DOES SURPLUS POSTING LIVE?
+    - Currently in kitchen_dash.py only.
+    - Plan: Add "Post Surplus" tab to admin_dash.py so both Institution admins
+      and Private Kitchen admins can post surplus without switching roles.
+    - kitchen_dash.py remains functional for standalone kitchen_fpu users.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. BUSINESS PROPOSAL — ECOMESS AI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXECUTIVE SUMMARY
+  EcoMess AI is an end-to-end intelligent food management and closed-loop
+  surplus redistribution ecosystem. It bridges institutional and commercial
+  food generators with social safety nets (NGOs, shelters, relief agencies)
+  while channeling inedible residues to the bio-economy (biogas & composting).
+
+THE PROBLEM
+  • Institutional kitchens (hostels, schools, hospitals) overprepare by 15–25%
+    due to unpredictable attendance — food is discarded daily.
+  • Restaurants and canteens face daily menu leftovers and expiring inventory.
+  • NGOs and relief workers spend hours manually calling multiple food sources.
+  • Edible food goes to landfill, generating methane; institutions bear disposal
+    costs and loss on raw material investment.
+
+SOLUTION — PLATFORM FEATURES
+  1. AI-Based Demand Forecasting (pre-cook prevention)
+  2. Surplus Food Registration (listing with quality & time window)
+  3. Automated Multi-Factor Smart Matching (NGO ↔ Kitchen)
+  4. Multiple-Source Pooling (aggregate A+B+C for large quotas)
+  5. Optimized Logistics & Route Planning (multi-stop vehicle tour)
+  6. Circular Economy Diversion (biogas/composting for inedibles)
+  7. Rewards & ESG Impact Reports (monthly analytics + eco-points)
+
+TARGET SEGMENTS
+  B2I (Institutions):
+    - University & College Hostels, Midday Meal Scheme (MDMS) Kitchens,
+      Hospitals, Government Mass-Feeding Centers, Armed Forces Messes
+
+  B2B (Commercial):
+    - Corporate & Campus Canteens, Working Women's & Professional Hostels,
+      Restaurants, Hotel Banquets & Caterers, Cloud Kitchens, QSR Hubs
+
+  BENEFICIARIES:
+    - Food Relief NGOs (Robin Hood Army, Annapurna, Akshaya Patra partners)
+    - Disaster Management Authorities & Emergency Relief Camps
+    - Local Community Buyers (discounted surplus meals)
+    - Biogas plants, composting facilities, organic/dairy farms
+
+UNIQUE VALUE PROPOSITION (UVP)
+  ✦ Pre-Cook AI Prevention — forecast demand before overproduction
+  ✦ Dynamic Surplus Monetization — free donation (CSR) or discounted sale
+  ✦ Automated Multi-Source Pooling — first-in-class algorithm for large quotas
+  ✦ Turnkey Logistics — multi-stop route planning with expiry deadline alerts
+  ✦ Closed-Loop Circular Economy — 100% zero-landfill waste diversion
+  ✦ Verified ESG Impact Reports — auditable carbon offset certificates
+
+REVENUE MODEL
+  1. SaaS Subscription (Institutions) — monthly/annual tier for AI features
+  2. Micro-Transaction Fee (Commercial Surplus) — 3–5% on discounted sales
+  3. CSR/ESG Impact Analytics — premium auditing and carbon offset reports
+  4. Government Contracts — disaster management municipal integration
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. SYSTEM ARCHITECTURE VISUAL — TEXT REPRESENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │                FOOD GENERATION & PREPARATION                │
+  │                                                             │
+  │  [Institutional Kitchens]      [Private/Commercial Kitchens]│
+  │  Hostels, Schools, MDMS,       Canteens, Restaurants,       │
+  │  Hospitals, Staff Messes       Catering, Cloud Kitchens     │
+  │       ↑                                 ↑                   │
+  │  [AI Demand Forecast] ─────────────────────────────────────►│
+  │  (Attendance, Polls,           (Order History, Menu, Day)   │
+  │   Historical Waste, Menu)                                   │
+  └──────────────────────────┬──────────────────────────────────┘
+                             │ Safe Surplus Food
+                             ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │              ECOMESS AI CORE COORDINATION PLATFORM          │
+  │                                                             │
+  │  [Surplus Registration]                                     │
+  │   Food type, qty, prep time, location, safe window          │
+  │            │                                                │
+  │            ▼                                                │
+  │  [Smart Matching Engine]                                    │
+  │   Qty match, Distance, Urgency, Food type, Capacity         │
+  │            │                                                │
+  │            ▼                                                │
+  │  [Multi-Source Allocation Hub]                              │
+  │   Pool Kitchen A (200) + B (180) + C (120) = 500 meals     │
+  │            │                                                │
+  │            ▼                                                │
+  │  [Logistics & Route Optimizer]                              │
+  │   Multi-stop TSP tour, expiry-aware scheduling              │
+  └────────────┬──────────────┬──────────────────────────────────┘
+               │              │ Inedible / Spoiled
+               │              ▼
+               │     ┌────────────────────┐
+               │     │  CIRCULAR ECONOMY  │
+               │     │ Biogas + Composting│
+               │     └────────────────────┘
+               │
+               ▼ Safe Surplus Food
+  ┌─────────────────────────────────────────────────────────────┐
+  │                  REDISTRIBUTION & VALUE RECOVERY            │
+  │                                                             │
+  │  [NGOs & Shelters]   [Community Buyers]  [Disaster Relief]  │
+  │  Free bulk donations  Subsidized meals    Emergency SOS pool│
+  └──────────────────────────┬──────────────────────────────────┘
+                             │ Feedback & Ratings
+                             ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │           FEEDBACK LOOP & CONTINUOUS IMPROVEMENT            │
+  │                                                             │
+  │  [Monthly ESG Reports]  [Eco-Points Ledger]  [AI Re-train]  │
+  │  Food saved, CO2 avoided, Cost savings, Meals provided      │
+  └─────────────────────────────────────────────────────────────┘
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. FILES TO MODIFY — EXECUTION ORDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. database.py        ← Add institution_type, customer_orders, functions
+  2. logistics_engine.py ← Add allocate_multi_source_surplus()
+  3. login_page.py      ← Add institution_type selector for admin
+  4. main.py            ← Pass context to dashboards
+  5. admin_dash.py      ← Adaptive tabs (institutional vs private_kitchen)
+  6. staff_dash.py      ← Customer Order Queue for private kitchen staff
+  7. ngo_dash.py        ← Multi-Source Allocation tab
+  8. home_page.py       ← Updated terminology (Institution & Private Kitchen)
+
+================================================================================
+END OF ANALYSIS
+================================================================================

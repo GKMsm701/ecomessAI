@@ -1,0 +1,50 @@
+the project is called eco mess
+
+here we have three clients students,staff and admin
+
+the web page begins from a page with description about the project
+the side bar leads to login page where all the about can login
+
+login module:username password and role.......this is stored in backend MySQL
+admin can add,delete and reset password for student and staff 
+if they click forgot password,they are diected to call admin and the admin gets notification 
+and reset the password of the student
+
+
+after the login module each role have thier respective dashboard
+
+
+in student dashboard:
+view attendance:done by admin-stored in MySQL in a table
+view menu for the week:in sliding format 
+remit fee payment
+poll count:to get count of food required for the next day(auto refresh at midnight)
+view user manual
+view notification from admin
+enter compliants/suggestions
+
+in staff dashboard:
+view attendance with timestamp
+view menu for the week
+view salary details
+view count for the day:the count from the students 
+view user manual
+view inventory: can see what is there in storage
+enter food waste: can enter the food wastage count
+
+
+in admin:
+view/edit menu
+view/edit attendance of staff as well as students
+view user manual
+view salary
+view/edit inventory
+get report about food wastage
+can view complaints
+can send notification to staff and students
+
+
+
+
+
+

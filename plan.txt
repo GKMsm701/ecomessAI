@@ -1,0 +1,75 @@
+EcoMESS AI:an smart an AI-Powered Smart Food Waste Reduction and Redistribution Ecosystem is an integrated platform that helps institutional kitchens (Hostels, Mid-day Meal Schemes etc. ) and food processing units predict food demand, detect surplus and quality risks, and intelligently distribute excess food before it becomes waste.
+
+-The system uses AI-based demand forecasting to estimate future food requirements and identify likely surplus. in hostel
+-combines expiry tracking and basic computer-vision quality checks to monitor food that may no longer be suitable for redistribution. When safe surplus is identified, the platform automatically matches it with suitable NGOs, shelters, food banks, or community kitchens based on food type, quantity, capacity, availability, and predicted local need in ngo to hostels/food processing units
+-A logistics module then suggests an efficient pickup/delivery route, 
+- feedback system records the quality and quantity experience after redistribution
+- The platform also provides multilingual interfaces so kitchen staff can easily report surplus in Hindi or regional languages.
+-a smart dashboard tracks food saved, waste avoided, estimated cost savings, redistribution impact, and sustainability metrics, helping institutions make better procurement and production decisions.
+ 
+
+here we have three users: hostels, NGO and Admin
+
+the web page begins from a page with description about the project
+the side bar leads to login page where all the about can login
+
+login module:username password and role.......this is stored in backend MySQL
+admin can add,delete and reset password for student and staff 
+if they click forgot password,they are diected to call admin and the admin gets notification 
+and reset the password of the student
+
+
+after the login module each role have thier respective dashboard
+
+in kitchen/FPUs{
+kichen can sell their near expire food for discountrd prices/free to Ngo/shelter or needy people in local and reward with some points based on contribution(free) and feedback rate.here admin is kitchen owners
+
+in hostel{
+in student dashboard:
+view attendance:done by admin-stored in MySQL in a table
+view menu for the week:in sliding format 
+remit fee payment
+poll count:to get count of food required for the 3 days from now(auto refresh at midnight)
+food count:no. of pieces of main food they eat for the above
+view user manual
+view notification from admin
+enter compliants/suggestions
+
+in staff dashboard:
+view attendance with timestamp
+view menu for the week
+view salary details
+view count for the day:the count from the students and predict the food demand
+view user manual
+view inventory: can see what is there in storage
+enter food waste: can enter the food wastage count
+
+
+in admin:
+view/edit menu
+view/edit attendance of staff as well as students
+view user manual
+view salary
+view/edit inventory
+get report about food wastage
+can view complaints
+can send notification to staff and students
+}
+}
+in NGO{
+individual can order item by paying a rate(discounted) fixed by the seller-kitchen and food processing units
+ngo can buy in a bulk 
+feedback from buyers who increases a score(rewards point)
+if the not buyer found then redirect nearby biogas plant in exchange of points/money
+vegetable waste will be send to farms
+contains list of ngo and their need and kitchen and their count of food
+logistics should be taken care by the NGO
+
+}
+
+
+
+
+
+
+
